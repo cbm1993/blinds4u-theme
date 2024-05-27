@@ -1,0 +1,285 @@
+{% schema %}
+{
+  "name": "Bestselling Fiction Books",
+  "class": "index-section",
+  "settings": [
+    {
+      "type": "color",
+      "id": "button_bg_color",
+      "label": "Add To Cart Button Colour",
+      "default": "#f8d857"
+    },
+    {
+      "type": "color",
+      "id": "button_text_color",
+      "label": "Text Color",
+      "default": "#215149"
+    }
+  ],
+  "presets": [
+    {
+      "category": "Products",
+      "name": "Bestselling Fiction Books"
+    }
+  ]
+}
+{% endschema %}
+
+<style>
+    body, .products, .product-title, .description, .price, .add-to-bag, .section-title {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  }
+  .products {
+    padding: 20px;
+  }
+  .products ul {
+    list-style-type: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .products ul li {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    width: calc(20% - 20px); 
+    margin-right: 20px;
+    box-sizing: border-box;
+  }
+  .products ul li img {
+    width: 100%;
+    height: 500px;
+    display: block;
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+  }
+  .product-title {
+    font-size: 1.3em;
+    color: #333;
+    font-weight: 600;
+    margin: 10px 0 5px;
+    text-align: left;
+  }
+  .description {
+    color: #888;
+    font-size: 1.0em;
+    text-align: left; 
+  }
+  .price {
+    text-align: left;
+    font-weight: bold;
+    font-size: 1.9em;
+    white-space: nowrap; 
+    overflow: hidden;
+    text-overflow: ellipsis; 
+    margin-bottom: 10px;
+  }
+  .add-to-bag {
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.2em;
+    width: 100%;
+    text-align: center;
+    background-color: {{ section.settings.button_bg_color | default: '#f8d857' }};
+    color: {{ section.settings.button_text_color | default: '#165749' }};
+    margin-top: auto; 
+  }
+  .product-details {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    flex-grow: 1;
+    width: 100%;
+  }
+  
+ .section-title {
+    font-size: 2em;
+    font-weight: bold;
+    color: #155546;
+    text-align: left;
+    margin-bottom: 5px;
+    margin-left: 20px;
+  }
+  
+  @media only screen and (max-width: 1200px) {
+    .products ul li {
+      width: calc(25% - 20px); 
+    }
+  }
+
+  @media only screen and (max-width: 992px) {
+    .products ul li {
+      width: calc(33.33% - 20px); 
+  }
+
+  @media only screen and (max-width: 768px) {
+    .products ul li {
+      width: calc(50% - 20px); 
+    }
+  }
+
+  @media only screen and (max-width: 576px) {
+    .products ul li {
+      width: 100%; 
+    }
+  }
+
+  @media only screen and (max-width: 768px) {
+    .section-title {
+      font-size: 1.5em;
+    }
+  }
+
+  @media only screen and (max-width: 576px) {
+    .section-title {
+      font-size: 2.0em; 
+      margin-right: 25px;
+      text-align: center;
+    }
+  }
+</style>
+
+<div id="header-{{ section.id }}">
+  <h2 class="section-title">Bestselling Fiction Books</h2>
+</div>
+<div id="products-{{ section.id }}" class="products"></div>
+<div id="footer-{{ section.id }}"></div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const sectionId = "{{ section.id }}";
+    const buttonBgColor = "{{ section.settings.button_bg_color | default: '#f8d857' }}";
+    const buttonTextColor = "{{ section.settings.button_text_color | default: '#215149' }}";
+    const shopifyDomain = 'blinds4u-technical-test.myshopify.com';
+    const storefrontAccessToken = '344f3c36f2c25bbb3e539690d9508ba3';
+    const collectionHandle = 'bestselling-fiction-books';
+
+    async function fetchProducts(cursor = null) {
+      let query = `{
+        collectionByHandle(handle: "${collectionHandle}") {
+          products(first: 20${cursor ? `, after: "${cursor}"` : ''}) {
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+            edges {
+              node {
+                title
+                description
+                vendor
+                priceRange {
+                  minVariantPrice {
+                    amount
+                    currencyCode
+                  }
+                }
+                onlineStoreUrl
+                images(first: 1) {
+                  edges {
+                    node {
+                      src
+                    }
+                  }
+                }
+                variants(first: 1) {
+                  edges {
+                    node {
+                      id
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }`;
+
+      const response = await fetch(`https://${shopifyDomain}/api/2024-04/graphql.json`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Shopify-Storefront-Access-Token': storefrontAccessToken,
+        },
+        body: JSON.stringify({ query }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.errors) {
+        throw new Error(data.errors ? data.errors.map(error => error.message).join(', ') : `HTTP error! status: ${response.status}`);
+      }
+
+      if (!data.data.collectionByHandle) {
+        throw new Error(`Collection handle "${collectionHandle}" not found`);
+      }
+
+      return data.data.collectionByHandle.products;
+    }
+
+    function formatPrice(amount, currency) {
+      return new Intl.NumberFormat('en-GB', {
+        style: 'currency',
+        currency: currency,
+      }).format(amount);
+    }
+
+    async function displayProducts() {
+      let hasNextPage = true;
+      let cursor = null;
+      const productsContainer = document.getElementById(`products-${sectionId}`);
+      const productList = document.createElement('ul');
+
+      while (hasNextPage) {
+        const productsData = await fetchProducts(cursor);
+        const products = productsData.edges;
+        hasNextPage = productsData.pageInfo.hasNextPage;
+        cursor = productsData.pageInfo.endCursor;
+
+        if (products.length === 0) {
+          productsContainer.innerHTML = '<p>No products found in this collection.</p>';
+          return;
+        }
+
+        products.forEach(product => {
+          const { title, vendor, description, priceRange, images, variants } = product.node;
+          const price = formatPrice(priceRange.minVariantPrice.amount, priceRange.minVariantPrice.currencyCode);
+          const imageUrl = images.edges.length > 0 ? images.edges[0].node.src : '';
+          const variantId = variants.edges.length > 0 ? variants.edges[0].node.id : '';
+
+          const listItem = document.createElement('li');
+          listItem.innerHTML = `
+            <img src="${imageUrl}" alt="${title}">
+            <div class="product-title">${title}</div>
+            <div class="product-details">
+              <div class="description">${description}</div>
+              <div class="price">${price}</div>
+            </div>
+            <button class="add-to-bag" data-variant-id="${variantId}" style="background-color: ${buttonBgColor}; color: ${buttonTextColor};">Add To Bag</button>
+          `;
+          productList.appendChild(listItem);
+        });
+
+        productsContainer.appendChild(productList);
+
+        document.querySelectorAll(`#products-${sectionId} .add-to-bag`).forEach(button => {
+          button.addEventListener('click', addToBag);
+        });
+      }
+    }
+
+    function addToBag(event) {
+      const variantId = event.target.dataset.variantId;
+      if (variantId) {
+      } else {
+        console.error(`Variant ID not found for "Add to Bag" button in section ${sectionId}.`);
+      }
+    }
+
+    displayProducts().catch(error => console.error(`Error fetching products for section ${sectionId}:`, error));
+  });
+</script>
