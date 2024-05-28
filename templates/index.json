@@ -6,17 +6,9 @@
         "button_bg_color": "#f8d857",
         "button_text_color": "#154941"
       }
-    },
-    "bestselling_fiction_books_w3aif4": {
-      "type": "bestselling-fiction-books",
-      "settings": {
-        "button_bg_color": "#f8d857",
-        "button_text_color": "#215149"
-      }
     }
   },
   "order": [
-    "bestselling_fiction_books_FyMNGk",
-    "bestselling_fiction_books_w3aif4"
+    "bestselling_fiction_books_FyMNGk"
   ]
 }
